@@ -1,0 +1,40 @@
+---Calculate the ICC results and create a points table with Matches played, No of Wins and points---
+
+--INPUT TABLE--
+create table icc_world_cup
+(
+Team_1 Varchar(20),
+Team_2 Varchar(20),
+Winner Varchar(20)
+);
+INSERT INTO icc_world_cup values('India','SL','India');
+INSERT INTO icc_world_cup values('SL','Aus','Aus');
+INSERT INTO icc_world_cup values('SA','Eng','Eng');
+INSERT INTO icc_world_cup values('Eng','NZ','NZ');
+INSERT INTO icc_world_cup values('Aus','India','India');
+
+select * from icc_world_cup;
+
+--SOLUTION 1--
+create table point_table as
+select distinct
+winner,
+count(winner) as wins,
+count(winner)*2 as points
+from
+icc_world_cup
+group by winner
+;
+
+select * from point_table;
+
+--SOLUTION 2--
+select team, count(1) as match_played, sum(win_flag) as wins, sum(win_flag) *2 as points
+from (
+select team_1 as team, case when team_1= winner then 1 else 0 end as win_flag 
+from icc_world_cup
+union all
+select team_2 as team, case when team_2= winner then 1 else 0 end as win_flag
+from icc_world_cup) a
+group by team
+order by points desc;
