@@ -33,3 +33,18 @@ INNER JOIN first_visit fv ON  co.customer_id = fv.customer_id
 SELECT order_date,sum(New_customer) AS new_c,sum(existing_customer) AS repeat_customer
 FROM visit
 GROUP BY order_date;
+
+
+---SOLUTION 2 ---
+--Further improve the above code--
+WITH first_visit AS (
+    SELECT customer_id,MIN(order_date) AS first_visit_dt
+    FROM customer_orders
+    GROUP BY customer_id
+)
+SELECT co.order_date,
+ SUM(CASE WHEN co.order_date = fv.first_visit_dt THEN 1 ELSE 0 END) AS New_customer,
+ SUM(CASE WHEN co.order_date != fv.first_visit_dt THEN 1 ELSE 0 END) AS existing_customer
+FROM customer_orders co
+INNER JOIN first_visit fv on co.customer_id = fv.customer_id
+GROUP BY co.order_date ;   
