@@ -1,0 +1,44 @@
+--Problem Statement--
+Need to identify the name, most visited floor, total number of visits and list of resources used froma table which contains employee info
+
+--INPUT CODE--
+create table entries ( 
+name varchar(20),
+address varchar(20),
+email varchar(20),
+floor int,
+resources varchar(10));
+
+insert into entries 
+values ('A','Bangalore','A@gmail.com',1,'CPU'),('A','Bangalore','A1@gmail.com',1,'CPU'),('A','Bangalore','A2@gmail.com',2,'DESKTOP')
+,('B','Bangalore','B@gmail.com',2,'DESKTOP'),('B','Bangalore','B1@gmail.com',2,'DESKTOP'),('B','Bangalore','B2@gmail.com',1,'MONITOR');
+
+select * from entries;
+
+--SOLUTION --
+WITH distinct_resources AS (
+    SELECT distinct name,resources 
+    FROM  entries
+)   
+,agg_resources AS (
+    SELECT name,GROUP_CONCAT(resources SEPARATOR ',') AS resource_used
+    FROM distinct_resources
+    GROUP BY name
+)      
+,total_visit AS (
+     SELECT Name,COUNT(1) AS total_visit
+     FROM entries
+     GROUP BY name
+)   
+,Max_visit AS (
+    SELECT Name,Floor,COUNT(1)as Floor_vist,
+        rank() over (PARTITION BY name ORDER BY COUNT(1) DESC) AS rn           
+    FROM entries
+    GROUP BY Name,floor
+) 
+    SELECT tv.Name,mv.Floor AS most_floor_visited,tv.total_visit,av.resource_used
+    FROM total_visit tv
+    INNER JOIN Max_visit mv ON tv.Name = mv.Name
+    INNER JOIN agg_resources av ON tv.Name = av.Name
+    WHERE mv.rn = 1
+;
