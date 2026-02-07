@@ -1,0 +1,50 @@
+--Write a query to fond PersonID,Name, Number of friends and total marks of all friends for that person. 
+Keep only those records where the total marks of all friends is geater than 100.
+
+-- INPUT FILE --
+Create table friend (pid int, fid int);
+insert into friend (pid , fid ) values ('1','2');
+insert into friend (pid , fid ) values ('1','3');
+insert into friend (pid , fid ) values ('2','1');
+insert into friend (pid , fid ) values ('2','3');
+insert into friend (pid , fid ) values ('3','5');
+insert into friend (pid , fid ) values ('4','2');
+insert into friend (pid , fid ) values ('4','3');
+insert into friend (pid , fid ) values ('4','5');
+
+create table person (PersonID int,	Name varchar(50),	Score int);
+insert into person(PersonID,Name ,Score) values('1','Alice','88');
+insert into person(PersonID,Name ,Score) values('2','Bob','11');
+insert into person(PersonID,Name ,Score) values('3','Devis','27');
+insert into person(PersonID,Name ,Score) values('4','Tara','45');
+insert into person(PersonID,Name ,Score) values('5','John','63');
+
+select * from person;
+select * from friend;
+
+--SOLUTION 1--
+SELECT a.PersonID,a.Name,COUNT(b.fid),SUM(b.score) 
+FROM person a
+INNER JOIN(
+SELECT f.pid,f.fid, p.score 
+FROM friend f
+INNER JOIN person p ON f.fid =p.PersonID
+) b    
+ON a.PersonID =b.pid
+GROUP BY a.PersonID,a.Name 
+HAVING SUM(b.score) > 100;
+
+
+--SOLUTION 2--
+WITH score_details AS (
+    SELECT f.pid, 
+           SUM(p.score) AS total_friend_score, 
+           COUNT(1) AS no_of_friends
+    FROM friend f
+    INNER JOIN person p ON f.fid = p.personid
+    GROUP BY f.pid
+    HAVING SUM(p.score) > 100
+)
+SELECT s.*, p.name AS person_name
+FROM person p
+INNER JOIN score_details s ON p.personid = s.pid;
