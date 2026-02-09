@@ -1,0 +1,60 @@
+-- Calculate the median salary by each department--
+
+--INPUT FILE--
+create table emp(
+emp_id int,
+emp_name varchar(20),
+department_id int,
+salary int,
+manager_id int,
+emp_age int);
+
+insert into emp
+values
+(1, 'Ankit', 100,10000, 4, 39),
+(2, 'Mohit', 100, 15000, 5, 48),
+(3, 'Vikas', 100, 10000,4,37),
+(4, 'Rohit', 100, 5000, 2, 16),
+(5, 'Mudit', 200, 12000, 6,55),
+(6, 'Agam', 200, 12000,2, 14),
+(7, 'Sanjay', 200, 9000, 2,13),
+(8, 'Ashish', 200,5000,2,12),
+(9, 'Mukesh',300,6000,6,51),
+(10, 'Rakesh',300,7000,6,50);
+
+
+---SOLUTION 1 (SQL) ---
+WITH cte AS (
+    select *,
+ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary, emp_id) AS rn_acs,
+ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC, emp_id DESC) AS rn_des
+FROM emp
+    )
+SELECT department_id,AVG(salary) as median
+FROM cte
+WHERE abs(rn_acs-rn_des)<=1
+GROUP BY department_id;
+
+---SOLUTION 2 (SQL) ---
+WITH ordered_salaries AS (
+  SELECT 
+    department_id,
+    salary,
+    ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary) AS rn,
+    COUNT(*) OVER (PARTITION BY department_id) AS cnt
+  FROM emp
+)
+SELECT 
+    department_id,
+    AVG(salary) AS median_salary
+FROM ordered_salaries
+WHERE rn IN ( (cnt + 1) / 2, (cnt + 2) / 2 )   -- handles odd/even counts
+GROUP BY department_id;
+
+---SOLUTION 3 (SQL Server 2022+) ---
+SELECT DISTINCT
+       department_id,
+       PERCENTILE_CONT(0.5)
+       WITHIN GROUP (ORDER BY salary)
+       OVER (PARTITION BY department_id) AS median_salary
+FROM emp;
