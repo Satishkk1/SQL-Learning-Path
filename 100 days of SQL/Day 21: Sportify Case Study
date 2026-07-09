@@ -1,0 +1,73 @@
+#Solve the below 5 queries from a sportify dataset#
+
+--INPUT DATA--
+
+CREATE table activity
+(
+user_id varchar(20),
+event_name varchar(20),
+event_date date,
+country varchar(20)
+);
+delete from activity;
+insert into activity values (1,'app-installed','2022-01-01','India')
+,(1,'app-purchase','2022-01-02','India')
+,(2,'app-installed','2022-01-01','USA')
+,(3,'app-installed','2022-01-01','USA')
+,(3,'app-purchase','2022-01-03','USA')
+,(4,'app-installed','2022-01-03','India')
+,(4,'app-purchase','2022-01-03','India')
+,(5,'app-installed','2022-01-03','SL')
+,(5,'app-purchase','2022-01-03','SL')
+,(6,'app-installed','2022-01-04','Pakistan')
+,(6,'app-purchase','2022-01-04','Pakistan');
+
+select * from activity;
+
+--SOLUTION--
+# find total active users each day#
+select event_date, count(distinct user_id) from activity
+group by event_date;
+
+# find total active users each day#
+select week(event_date), count(distinct user_id) from activity
+group by week(event_date);
+
+# find date wise total number of users who made the purchase#
+#the same day they installed the app#
+
+ select event_date,count(new_user) as no_of_user from(
+        select user_id, event_date,case when count(distinct event_name) =2 then 
+            user_id  else  null end as new_user from activity
+        group by user_id, event_date
+    ) a group by event_date;
+
+# find percentage of paid users in India , USA and any other country as other
+   
+WITH country_user AS (
+    SELECT CASE WHEN country = 'India' THEN 'India'
+                WHEN country = 'USA'   THEN 'USA' 
+                ELSE 'Others' END AS new_country,
+           COUNT(DISTINCT user_id) AS users 
+    FROM activity 
+    WHERE event_name = 'app-purchase'
+    GROUP BY new_country
+), 
+total AS (
+    SELECT SUM(users) AS total_users FROM country_user
+)
+SELECT new_country, users / total_users *100 AS user_ratio 
+FROM country_user, total;
+ ;
+
+# find among all the users who installed the app on a given day,how many did a app purchase next day.give day wise result
+with prev_data as(
+    select *,
+       lag(event_date) OVER (PARTITION BY user_id ORDER BY event_date) as prev_event_date,
+       lag(event_name) OVER (PARTITION BY user_id ORDER BY event_date)as prev_event_name
+    from activity)
+    select event_date, count(distinct user_id) as users from prev_data
+    where event_name ='app-purchase' 
+        and prev_event_name ='app-installed' 
+        and DATEDIFF(event_date, prev_event_date) = 1
+    group by event_date;
