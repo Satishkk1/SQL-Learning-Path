@@ -1,0 +1,73 @@
+You are given a stores sales table.Each store reports sales quarter-wise.
+Every store is closed for exactly one quarter due to maintenance.Hence, for each store one quarter is missing
+
+👉 Write an SQL query to find the missing quarter for each store.
+
+---INPUT FILE---
+CREATE TABLE STORES (
+Store varchar(10),
+Quarter varchar(10),
+Amount int);
+
+INSERT INTO STORES (Store, Quarter, Amount)
+VALUES ('S1', 'Q1', 200),
+('S1', 'Q2', 300),
+('S1', 'Q4', 400),
+('S2', 'Q1', 500),
+('S2', 'Q3', 600),
+('S2', 'Q4', 700),
+('S3', 'Q1', 800),
+('S3', 'Q2', 750),
+('S3', 'Q3', 900);
+
+---SOLUTION--
+
+--METHOD-1---
+select
+  store,
+ concat('Q', cast(10 - sum(cast(right(Quarter, 1) as signed)) as char(2))) as q_no
+from STORES
+group by store;
+
+--METHOD-2---
+with recursive unique_stores as (
+  select distinct store from STORES
+),
+cte as (
+  select store, 1 as q_no from unique_stores
+  union all
+  select store, q_no + 1 from cte where q_no < 4
+),
+q as (
+  select
+    store,
+    -- Uses standard standard concat / pipe operators
+    concat('Q', cast(q_no as char(1))) as q_no -- Use 'Q' || q_no for PostgreSQL
+  from cte
+)
+select q.*
+from q
+left join STORES s
+  on q.store = s.store and q.q_no = s.quarter
+where s.store is null;
+
+--METHOD-3---
+with cte as (
+  select distinct
+    s1.store,
+    s2.quarter
+  from STORES s1, STORES s2
+)
+select
+  q.*
+from cte q
+left join STORES s
+  on q.store = s.store and q.quarter = s.quarter
+where
+  s.store is null;
+
+select distinct
+    s1.store,
+    s2.quarter
+  from STORES s1, STORES s2 order by s1.store;
+
