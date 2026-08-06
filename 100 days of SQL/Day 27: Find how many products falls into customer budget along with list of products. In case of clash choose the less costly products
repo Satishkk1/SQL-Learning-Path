@@ -1,0 +1,37 @@
+--Find how many products falls into customer budget along with list of products. In case of clash
+choose the less costly products--
+
+---INPUT FILE---
+create table products
+(
+product_id varchar(20) ,
+cost int
+);
+insert into products values ('P1',200),('P2',300),('P3',500),('P4',800);
+
+create table customer_budget
+(
+customer_id int,
+budget int
+);
+
+insert into customer_budget values (100,400),(200,800),(300,1500);
+
+---SOLUTION---
+with running_cost as (
+  select
+    *,
+    sum(cost) over (order by cost asc) as r_cost
+  from products
+)
+select
+  cb.customer_id,
+  cb.budget,
+  count(rc.product_id) as no_of_products,
+  group_concat(rc.product_id) as list_of_products
+from customer_budget cb
+left join running_cost rc
+  on rc.r_cost <= cb.budget
+group by
+  cb.customer_id,
+  cb.budget;
