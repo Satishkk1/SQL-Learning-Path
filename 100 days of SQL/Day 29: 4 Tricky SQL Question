@@ -1,0 +1,80 @@
+Problem 1: Identify those stidents and their subject where their makrs were more than total average marks
+Problem 2: Identify the percentage of students who got more than 90% marks in any subject
+Problem 3: Identify the second highest and second lowest for all subject
+Problem 4: For each test and student, identify if their marks increased or decreased from previous test
+
+---INPUT FILE---
+CREATE TABLE students (
+ studentid int NULL,
+ studentname varchar(255) NULL,
+ subject varchar(255) NULL,
+ marks int NULL,
+ testid int NULL,
+ testdate date NULL
+);
+
+-- Data insertion
+insert into students values (2,'Max Ruin','Subject1',63,1,'2022-01-02');
+insert into students values (3,'Arnold','Subject1',95,1,'2022-01-02');
+insert into students values (4,'Krish Star','Subject1',61,1,'2022-01-02');
+insert into students values (5,'John Mike','Subject1',91,1,'2022-01-02');
+insert into students values (4,'Krish Star','Subject2',71,1,'2022-01-02');
+insert into students values (3,'Arnold','Subject2',32,1,'2022-01-02');
+insert into students values (5,'John Mike','Subject2',61,2,'2022-11-02');
+insert into students values (1,'John Deo','Subject2',60,1,'2022-01-02');
+insert into students values (2,'Max Ruin','Subject2',84,1,'2022-01-02');
+insert into students values (2,'Max Ruin','Subject3',29,3,'2022-01-03');
+insert into students values (5,'John Mike','Subject3',98,2,'2022-11-02');
+
+-- Query data
+select * from students;
+
+----SOLUTION---
+
+-Solution 1-
+with avg_cte as (
+    select subject, avg(marks) as avg_marks 
+    from students
+    group by subject
+)
+select 
+    s.*, ac.*
+from students s
+inner join avg_cte ac on s.subject = ac.subject
+where s.marks > ac.avg_marks;
+
+-Solution 2-
+select
+    count(distinct case when marks > 90 then studentid else null end) * 1.0 / count(distinct studentid) * 100 as perc
+from students;
+
+-Solution 3-
+select 
+    subject,
+    sum(case when rnk_desc = 2 then marks else null end) as second_highest_marks,
+    sum(case when rnk_asc = 2 then marks else null end) as second_lowest_marks
+from
+(
+    select 
+        subject,
+        marks,
+        rank() over(partition by subject order by marks asc) as rnk_asc,
+        rank() over(partition by subject order by marks desc) as rnk_desc
+    from students
+) A
+group by subject;
+
+-Solution 4-
+select 
+    *,
+    case 
+        when marks > prev_marks then 'inc'
+        when marks < prev_marks then 'dec'
+        else null 
+    end as statys
+from (
+    select 
+        *,
+        lag(marks,1) over(partition by studentid order by testdate, subject) as prev_marks
+    from students
+) A;
