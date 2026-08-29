@@ -1,0 +1,42 @@
+---write an sql code to find details of employee with 3rd highest salary
+   in each department. In case there are less than 3 employees in any department,
+   then return the employee details with lowest salary in that department---
+
+---INPUT FILE---
+CREATE TABLE emp (
+    emp_id INT NULL,
+    emp_name VARCHAR(50) NULL,
+    salary INT NULL,
+    manager_id INT NULL,
+    emp_age INT NULL,
+    dep_id INT NULL,
+    dep_name VARCHAR(20) NULL,
+    gender VARCHAR(10) NULL
+);
+
+INSERT INTO emp VALUES(1,'Ankit',14300,4,39,100,'Analytics','Female');
+INSERT INTO emp VALUES(2,'Mohit',14000,5,48,200,'IT','Male');
+INSERT INTO emp VALUES(3,'Vikas',12100,4,37,100,'Analytics','Female');
+INSERT INTO emp VALUES(4,'Rohit',7260,2,16,100,'Analytics','Female');
+INSERT INTO emp VALUES(5,'Mudit',15000,6,55,200,'IT','Male');
+INSERT INTO emp VALUES(6,'Agam',15600,2,14,200,'IT','Male');
+INSERT INTO emp VALUES(7,'Sanjay',12000,2,13,200,'IT','Male');
+INSERT INTO emp VALUES(8,'Ashish',7200,2,12,200,'IT','Male');
+INSERT INTO emp VALUES(9,'Mukesh',7000,6,51,300,'HR','Male');
+INSERT INTO emp VALUES(10,'Rakesh',8000,6,50,300,'HR','Male');
+INSERT INTO emp VALUES(11,'Akhil',4000,1,31,500,'Ops','Male');
+
+select * from emp;
+
+---SOLUTION---
+select * from emp
+order by dep_id,salary desc;
+
+with sal as (
+    select emp_id,emp_name,salary,dep_id,dep_name
+    ,rank() over(partition by dep_id order by salary desc) as rn
+    ,count(1) over(partition by dep_id) as cnt
+    from emp
+)
+select * from sal
+where rn=3 or (cnt<3 and rn=cnt);
