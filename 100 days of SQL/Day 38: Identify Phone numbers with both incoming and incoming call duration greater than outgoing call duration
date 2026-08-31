@@ -1,0 +1,63 @@
+--Write SQL query to identify phone numbers that satisfy below conditions:
+-The numbers have both incoming and outgoing calls-
+-The sum of duration of outgoing calls greater than sum of duration of incoming calls-
+
+---INPUT FILE---
+create table call_details  (
+call_type varchar(10),
+call_number varchar(12),
+call_duration int
+);
+
+insert into call_details
+values ('OUT','181868',13),('OUT','2159010',8)
+,('OUT','2159010',178),('SMS','4153810',1),('OUT','2159010',152),('OUT','9140152',18),('SMS','4162672',1)
+,('SMS','9168204',1),('OUT','9168204',576),('INC','2159010',5),('INC','2159010',4),('SMS','2159010',1)
+,('SMS','4535614',1),('OUT','181868',20),('INC','181868',54),('INC','218748',20),('INC','2159010',9)
+,('INC','197432',66),('SMS','2159010',1),('SMS','4535614',1);
+
+---SOLUTION METHOD-1 ---
+with cte as (
+    select 
+    call_number,
+    sum(case when call_type = 'OUT' then call_duration else null end)as out_duration,
+    sum(case when call_type = 'INC' then call_duration else null end)as inc_duration
+    from
+    call_details
+    group by call_number
+    )
+    select 
+    call_number
+    from cte
+    where out_duration is not null and inc_duration is not null and out_duration>inc_duration;
+
+---SOLUTION  METHOD-2---
+Select call_number
+from call_details
+group by call_number
+having sum(case when call_type='OUT' then call_duration else null end)>0
+and sum(case when call_type='INC' then call_duration else null end)>0
+and sum(case when call_type='OUT' then call_duration else null end) > sum(case when call_type='INC' then call_duration else null end);
+
+---SOLUTION METHOD-3---
+with cte_out as (
+  select
+    call_number,
+    sum(call_duration) as duration
+    from call_details
+where call_type='OUT'
+group by call_number
+),
+cte_in as (
+select call_number,
+sum(call_duration) as duration
+from call_details
+where call_type='INC'
+group by call_number
+)
+select
+cte_out.call_number
+from cte_out
+inner join cte_in on cte_out.call_number=cte_in.call_number
+where cte_out.duration>cte_in.duration;
+
